@@ -1,1 +1,885 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Select Events Nationals – Skills Competition Leaderboard</title>
+  <style>
+    /* ───── RESET & BASE ───── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:  #0D2560;
+      --blue:  #1B4FBF;
+      --red:   #CC1122;
+      --red2:  #FF2233;
+      --white: #FFFFFF;
+      --gold:  #FFD700;
+      --silver:#C0C0C0;
+      --bronze:#CD7F32;
+      --bg:    #07133A;
+      --card:  #122672;
+      --card2: #0F1F5E;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ───── ANIMATED BACKGROUND ───── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(27,79,191,0.25) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(204,17,34,0.2) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ───── FLOATING BASKETBALLS ───── */
+    .bg-balls {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bg-ball {
+      position: absolute;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.04);
+      animation: floatBall linear infinite;
+    }
+    @keyframes floatBall {
+      0%   { transform: translateY(110vh) rotate(0deg);   opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.5; }
+      100% { transform: translateY(-20vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ───── HEADER ───── */
+    header {
+      position: relative;
+      z-index: 10;
+      background: linear-gradient(160deg, var(--navy) 0%, #0a1c4f 100%);
+      border-bottom: 4px solid var(--red);
+      padding: 28px 20px 20px;
+      text-align: center;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Shield logo SVG */
+    .shield-logo {
+      width: 110px;
+      filter: drop-shadow(0 4px 12px rgba(204,17,34,0.5));
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 4px 12px rgba(204,17,34,0.5)); }
+      50%       { transform: scale(1.04); filter: drop-shadow(0 6px 20px rgba(204,17,34,0.8)); }
+    }
+
+    .header-titles { line-height: 1.1; }
+    .header-titles .sub  { font-size: 0.8rem; letter-spacing: 0.3em; color: #aac4ff; text-transform: uppercase; }
+    .header-titles h1    { font-size: 2.6rem; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase;
+                           background: linear-gradient(90deg, #fff 30%, #ffcece 100%);
+                           -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header-titles .venue { font-size: 0.75rem; letter-spacing: 0.2em; color: var(--red2); text-transform: uppercase; margin-top: 4px; }
+
+    .stars-row { display: flex; gap: 10px; font-size: 1.3rem; }
+
+    /* ───── REFRESH BAR ───── */
+    .refresh-bar {
+      position: relative;
+      z-index: 10;
+      background: var(--red);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .refresh-bar .dot {
+      width: 8px; height: 8px;
+      background: #fff;
+      border-radius: 50%;
+      animation: blink 1s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* ───── STATS STRIP ───── */
+    .stats-strip {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 18px 16px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 14px 20px;
+      min-width: 130px;
+      text-align: center;
+      flex: 1;
+      max-width: 180px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .stat-card .stat-icon { font-size: 1.8rem; line-height: 1; }
+    .stat-card .stat-val  { font-size: 1.9rem; font-weight: 900; color: var(--gold); line-height: 1.1; margin: 4px 0 2px; }
+    .stat-card .stat-lbl  { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: #aac4ff; }
+
+    /* ───── QUOTE TICKER ───── */
+    .quote-ticker {
+      position: relative;
+      z-index: 10;
+      background: rgba(13,37,96,0.7);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+      padding: 8px 0;
+      white-space: nowrap;
+    }
+    .ticker-inner {
+      display: inline-block;
+      animation: ticker 30s linear infinite;
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      color: #c8d8ff;
+      padding-left: 100%;
+    }
+    @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
+
+    /* ───── GRADE TABS ───── */
+    .tabs-wrap {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 20px 16px 4px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .tab-btn {
+      background: rgba(255,255,255,0.07);
+      border: 2px solid rgba(255,255,255,0.15);
+      color: #aac4ff;
+      padding: 9px 22px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover    { border-color: var(--blue); color: #fff; }
+    .tab-btn.active   {
+      background: var(--red);
+      border-color: var(--red2);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(204,17,34,0.5);
+    }
+    .tab-btn.active .tab-count { background: rgba(255,255,255,0.3); }
+    .tab-count {
+      display: inline-block;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-size: 0.7rem;
+      margin-left: 5px;
+    }
+
+    /* ───── GRADE SECTION ───── */
+    .main-content {
+      position: relative;
+      z-index: 10;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px 16px 40px;
+    }
+
+    .grade-section { display: none; }
+    .grade-section.active { display: block; animation: fadeIn 0.35s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ───── PODIUM ───── */
+    .podium {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 20px 0 8px;
+    }
+    .podium-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .podium-avatar {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      font-weight: 900;
+      border: 3px solid;
+      box-shadow: 0 0 16px rgba(0,0,0,0.5);
+    }
+    .podium-slot.rank-1 .podium-avatar { border-color: var(--gold);   background: rgba(255,215,0,0.15); width:64px; height:64px; font-size:1.9rem; }
+    .podium-slot.rank-2 .podium-avatar { border-color: var(--silver); background: rgba(192,192,192,0.12); }
+    .podium-slot.rank-3 .podium-avatar { border-color: var(--bronze); background: rgba(205,127,50,0.12); }
+
+    .podium-name  { font-size: 0.72rem; font-weight: 700; text-align: center; max-width: 90px; line-height: 1.2; }
+    .podium-club  { font-size: 0.6rem; color: #aac4ff; text-align: center; max-width: 90px; }
+    .podium-score { font-size: 1rem; font-weight: 900; }
+    .podium-slot.rank-1 .podium-score { font-size: 1.3rem; color: var(--gold); }
+    .podium-slot.rank-2 .podium-score { color: var(--silver); }
+    .podium-slot.rank-3 .podium-score { color: var(--bronze); }
+
+    .podium-block {
+      border-radius: 8px 8px 0 0;
+      width: 90px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: rgba(255,255,255,0.3);
+    }
+    .rank-1 .podium-block { background: linear-gradient(180deg,#b8940a,#7a6005); height: 80px; width:110px; }
+    .rank-2 .podium-block { background: linear-gradient(180deg,#7a7a7a,#4a4a4a); height: 60px; }
+    .rank-3 .podium-block { background: linear-gradient(180deg,#7a4a1a,#4a2a08); height: 45px; }
+
+    /* ───── LEADERBOARD TABLE ───── */
+    .lb-table-wrap {
+      margin-top: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .lb-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .lb-table thead tr {
+      background: rgba(13,37,96,0.8);
+    }
+    .lb-table thead th {
+      padding: 10px 14px;
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #aac4ff;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .lb-table thead th.center { text-align: center; }
+
+    .lb-table tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.15s;
+    }
+    .lb-table tbody tr:hover  { background: rgba(255,255,255,0.05); }
+    .lb-table tbody tr:last-child { border-bottom: none; }
+
+    .lb-table tbody tr.rank-top { background: rgba(255,215,0,0.06); }
+    .lb-table tbody tr.rank-top:hover { background: rgba(255,215,0,0.1); }
+
+    .lb-table td {
+      padding: 11px 14px;
+      font-size: 0.88rem;
+    }
+
+    .rank-cell {
+      text-align: center;
+      font-weight: 800;
+      font-size: 1rem;
+      width: 44px;
+    }
+    .medal { font-size: 1.3rem; }
+
+    .player-name { font-weight: 700; }
+    .fire-badge   { font-size: 0.8rem; margin-left: 6px; }
+
+    .club-cell    { color: #aac4ff; font-size: 0.8rem; }
+
+    .score-cell {
+      font-weight: 900;
+      font-size: 1.05rem;
+      text-align: right;
+      color: var(--white);
+    }
+    .score-cell .score-bar-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .score-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--blue);
+      min-width: 6px;
+      transition: width 0.6s ease;
+    }
+    tr.rank-top .score-bar { background: linear-gradient(90deg, var(--gold), var(--red2)); }
+
+    /* ───── EMPTY STATE ───── */
+    .empty-state {
+      text-align: center;
+      padding: 50px 20px;
+      color: #5577aa;
+    }
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.85rem; letter-spacing: 0.1em; }
+
+    /* ───── FOOTER ───── */
+    footer {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 20px;
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 0.1em;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* ───── TOAST ───── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      background: var(--red);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.4s;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ───── RESPONSIVE ───── */
+    @media (max-width: 600px) {
+      .header-titles h1 { font-size: 2rem; }
+      .podium-block.rank-1 { height: 60px; width: 90px; }
+      .stat-card { min-width: 100px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── FLOATING BALLS ── -->
+<div class="bg-balls" id="bgBalls"></div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-inner">
+    <!-- Official Select Events Nationals logo (falls back to SVG if logo.png not found) -->
+    <img class="shield-logo" src="logo.png" alt="Select Events Nationals"
+      onerror="this.style.display='none';document.getElementById('fallbackLogo').style.display='block'" />
+    <svg id="fallbackLogo" class="shield-logo" viewBox="0 0 220 250" xmlns="http://www.w3.org/2000/svg" style="display:none">
+      <path d="M110 10 L210 50 L210 155 Q210 220 110 245 Q10 220 10 155 L10 50 Z" fill="#1B4FBF" stroke="#fff" stroke-width="5"/>
+      <path d="M110 10 L160 38 L160 50 L110 22 L60 50 L60 38 Z" fill="#0D2560"/>
+      <rect x="20" y="148" width="180" height="36" rx="8" fill="#CC1122"/>
+      <circle cx="110" cy="185" r="28" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+      <line x1="20" y1="185" x2="200" y2="185" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+      <path d="M110 157 Q140 171 140 185 Q140 199 110 213" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+      <path d="M110 157 Q80 171 80 185 Q80 199 110 213" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+      <text x="32"  y="48" font-size="20" fill="#CC1122">★</text>
+      <text x="60"  y="30" font-size="16" fill="#CC1122">★</text>
+      <text x="152" y="30" font-size="16" fill="#CC1122">★</text>
+      <text x="174" y="48" font-size="20" fill="#CC1122">★</text>
+      <text x="97"  y="26" font-size="14" fill="#fff">★</text>
+      <text x="110" y="90"  font-family="Arial Black,Arial" font-weight="900" font-size="14" fill="#fff" text-anchor="middle" letter-spacing="3">SELECT EVENTS</text>
+      <text x="110" y="140" font-family="Arial Black,Arial" font-weight="900" font-size="28" fill="#fff" text-anchor="middle" letter-spacing="1">NATIONALS</text>
+      <text x="110" y="172" font-family="Arial,sans-serif" font-weight="700" font-size="9" fill="#fff" text-anchor="middle" letter-spacing="1">SPOOKY NOOK CHAMPION MILL</text>
+    </svg>
+
+    <div class="header-titles">
+      <div class="sub">Official Tournament</div>
+      <h1>Skills Competition</h1>
+      <div class="sub" style="font-size:0.95rem;letter-spacing:0.2em;color:#fff;margin-top:2px;">LEADERBOARD</div>
+      <div class="venue">🏀 Middle School Girls Basketball 🏀</div>
+    </div>
+
+    <div class="stars-row">
+      <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── LIVE REFRESH BAR ── -->
+<div class="refresh-bar">
+  <div class="dot"></div>
+  <span>LIVE — Auto-refreshing every 60 seconds &nbsp;|&nbsp; Next refresh in <span id="countdown">60</span>s</span>
+  <div class="dot"></div>
+</div>
+
+<!-- ── STATS STRIP ── -->
+<div class="stats-strip" id="statsStrip">
+  <div class="stat-card">
+    <div class="stat-icon">🏀</div>
+    <div class="stat-val" id="statPlayers">—</div>
+    <div class="stat-lbl">Total Players</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🏅</div>
+    <div class="stat-val" id="statClubs">—</div>
+    <div class="stat-lbl">Clubs Competing</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">⏱️</div>
+    <div class="stat-val" id="statTopScore">—</div>
+    <div class="stat-lbl">Best Time</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🔥</div>
+    <div class="stat-val" id="statLeaders">—</div>
+    <div class="stat-lbl">Current Leaders</div>
+  </div>
+</div>
+
+<!-- ── QUOTE TICKER ── -->
+<div class="quote-ticker">
+  <div class="ticker-inner" id="ticker">
+    ★ &nbsp; SELECT EVENTS NATIONALS &nbsp; ★ &nbsp; SELECT EVENTS NATIONALS &nbsp; ★ &nbsp; SELECT EVENTS NATIONALS &nbsp; ★ &nbsp; SELECT EVENTS NATIONALS &nbsp; ★ &nbsp; SELECT EVENTS NATIONALS &nbsp; ★ &nbsp; SELECT EVENTS NATIONALS &nbsp; ★ &nbsp; SELECT EVENTS NATIONALS &nbsp; ★ &nbsp; SELECT EVENTS NATIONALS &nbsp;
+  </div>
+</div>
+
+<!-- ── GRADE TABS ── -->
+<div class="tabs-wrap" id="tabsWrap">
+  <!-- dynamically populated -->
+</div>
+
+<!-- ── MAIN CONTENT ── -->
+<main class="main-content" id="mainContent">
+  <div class="empty-state">
+    <div class="empty-icon">⏳</div>
+    <p>LOADING LEADERBOARD DATA…</p>
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer>
+  SELECT EVENTS BASKETBALL &nbsp;·&nbsp; SPOOKY NOOK CHAMPION MILL &nbsp;·&nbsp;
+  LEADERBOARD AUTO-UPDATES FROM LIVE SCORES &nbsp;·&nbsp;
+  LAST UPDATED: <span id="lastUpdated">—</span>
+</footer>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast">🔄 Leaderboard Updated!</div>
+
+<script>
+  /* ────────────────────────────────────────────
+     CONFIG
+  ──────────────────────────────────────────── */
+  // ─────────────────────────────────────────────────────────────────
+  // PASTE YOUR GOOGLE APPS SCRIPT URL BELOW (see setup instructions)
+  // ─────────────────────────────────────────────────────────────────
+  const SCRIPT_URL = 'YOUR_SCRIPT_URL_HERE';
+  // ─────────────────────────────────────────────────────────────────
+
+  const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS7p6pNQomlmn1mhYw2lUbZ0A1f24PirN0hNcX4fqYud2_zFP6DwW9Lu4yMqAXfnSdXZ3P3UmwcGt6F/pub?gid=0&single=true&output=csv';
+  const REFRESH_INTERVAL = 60; // seconds
+
+  const GRADE_ORDER = ['8TH','7TH','6TH','5TH','4TH'];
+  const GRADE_LABELS = { '8TH':'8th Grade','7TH':'7th Grade','6TH':'6th Grade','5TH':'5th Grade','4TH':'4th Grade' };
+  const GRADE_EMOJI  = { '8TH':'👑','7TH':'⭐','6TH':'🔥','5TH':'💫','4TH':'🌟' };
+
+  let activeGrade = null;
+  let gradeData   = {};
+  let countdownVal = REFRESH_INTERVAL;
+
+  /* ────────────────────────────────────────────
+     FLOATING BACKGROUND BALLS
+  ──────────────────────────────────────────── */
+  (function spawnBalls() {
+    const container = document.getElementById('bgBalls');
+    for (let i = 0; i < 12; i++) {
+      const b = document.createElement('div');
+      b.className = 'bg-ball';
+      const size = 30 + Math.random() * 80;
+      b.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${Math.random()*100}%;
+        animation-duration:${12 + Math.random()*20}s;
+        animation-delay:${Math.random()*15}s;
+      `;
+      container.appendChild(b);
+    }
+  })();
+
+  /* ────────────────────────────────────────────
+     CSV PARSER  (handles quoted fields)
+  ──────────────────────────────────────────── */
+  function parseCSVRow(line) {
+    const result = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  function parseData(csvText) {
+    const lines = csvText.split('\n').filter(l => l.trim());
+    const rows  = lines.map(parseCSVRow);
+
+    // Find grade-header row (contains "TH" grade labels)
+    let gradeRowIdx = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].some(c => /^\d+TH$/i.test(c.trim()))) {
+        gradeRowIdx = i; break;
+      }
+    }
+    if (gradeRowIdx === -1) return {};
+
+    // Map grade → column offset
+    const gradeRow = rows[gradeRowIdx];
+    const gradeMap = {}; // grade → { nameCol, clubCol, scoreCol }
+    for (let col = 0; col < gradeRow.length; col++) {
+      const cell = gradeRow[col].trim().toUpperCase();
+      if (/^\d+TH$/.test(cell)) {
+        gradeMap[cell] = { nameCol: col, clubCol: col+1, scoreCol: col+2, players: [] };
+      }
+    }
+
+    // Data starts 2 rows after grade headers (skip column-label row)
+    const dataStart = gradeRowIdx + 2;
+    for (let i = dataStart; i < rows.length; i++) {
+      const row = rows[i];
+      for (const grade of Object.keys(gradeMap)) {
+        const g = gradeMap[grade];
+        const name  = (row[g.nameCol]  || '').trim();
+        const club  = (row[g.clubCol]  || '').trim();
+        const score = parseFloat(row[g.scoreCol]);
+        if (name && name.toUpperCase() !== 'NAME' && !isNaN(score)) {
+          g.players.push({ name, club, score });
+        }
+      }
+    }
+
+    // Sort by score descending
+    for (const g of Object.keys(gradeMap)) {
+      gradeMap[g].players.sort((a, b) => b.score - a.score);
+    }
+    return gradeMap;
+  }
+
+  /* ────────────────────────────────────────────
+     RENDER STATS STRIP
+  ──────────────────────────────────────────── */
+  function renderStats(data) {
+    const grades  = Object.keys(data).filter(g => data[g].players.length > 0);
+    const allP    = grades.flatMap(g => data[g].players);
+    const teams   = new Set(allP.map(p => p.club).filter(Boolean));
+    const topScore= allP.length ? Math.max(...allP.map(p=>p.score)) : 0;
+    const leaders = grades.map(g => data[g].players[0]?.name).filter(Boolean);
+
+    document.getElementById('statPlayers').textContent  = allP.length  || '—';
+    document.getElementById('statClubs').textContent    = teams.size   || '—';
+    document.getElementById('statTopScore').textContent = topScore || '—';
+    document.getElementById('statLeaders').textContent  = leaders.length || '—';
+  }
+
+  /* ────────────────────────────────────────────
+     RENDER TABS
+  ──────────────────────────────────────────── */
+  function renderTabs(data) {
+    const wrap  = document.getElementById('tabsWrap');
+    const order = GRADE_ORDER.filter(g => data[g]);
+    wrap.innerHTML = '';
+
+    order.forEach((grade, i) => {
+      const count = data[grade].players.length;
+      const btn   = document.createElement('button');
+      btn.className = 'tab-btn' + (grade === activeGrade ? ' active' : '');
+      btn.innerHTML = `${GRADE_EMOJI[grade] || ''} ${GRADE_LABELS[grade] || grade} <span class="tab-count">${count}</span>`;
+      btn.onclick   = () => switchGrade(grade);
+      wrap.appendChild(btn);
+    });
+  }
+
+  /* ────────────────────────────────────────────
+     RENDER PODIUM (top 3)
+  ──────────────────────────────────────────── */
+  function podiumHTML(players) {
+    const ranks = [1,2,3].map(r => players[r-1]);
+    const emojis = { 1:'🥇', 2:'🥈', 3:'🥉' };
+    const rankClass = { 1:'rank-1', 2:'rank-2', 3:'rank-3' };
+
+    // Reorder to 2-1-3 visually
+    const visual = [ranks[1], ranks[0], ranks[2]];
+    const rvis   = [2,1,3];
+
+    return `<div class="podium">
+      ${visual.map((p, i) => {
+        const r = rvis[i];
+        if (!p) return `<div class="podium-slot ${rankClass[r]}">
+          <div class="podium-avatar" style="font-size:1.2rem;opacity:0.3;">?</div>
+          <div class="podium-name" style="opacity:0.3">TBD</div>
+          <div class="podium-score" style="opacity:0.3">—</div>
+          <div class="podium-block">${r}</div>
+        </div>`;
+        const initials = p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        return `<div class="podium-slot ${rankClass[r]}">
+          <div class="podium-avatar">${initials}</div>
+          <div class="podium-name">${p.name}</div>
+          <div class="podium-club">${p.club || ''}</div>
+          <div class="podium-score">${emojis[r]} ${p.score}</div>
+          <div class="podium-block">${r}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  /* ────────────────────────────────────────────
+     RENDER TABLE
+  ──────────────────────────────────────────── */
+  function tableHTML(players) {
+    if (!players.length) return `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <p>NO SCORES RECORDED YET</p>
+    </div>`;
+
+    const maxScore = players[0].score;
+    const medals   = ['🥇','🥈','🥉'];
+
+    const rows = players.map((p, i) => {
+      const rank  = i + 1;
+      const isTop = rank <= 3;
+      const pct   = maxScore > 0 ? Math.max(8, Math.round((p.score / maxScore) * 100)) : 8;
+      const rankCell = rank <= 3
+        ? `<span class="medal">${medals[i]}</span>`
+        : `<span style="color:#5577aa">${rank}</span>`;
+      const fire = rank === 1 ? '<span class="fire-badge">🔥</span>' : '';
+
+      return `<tr class="${isTop ? 'rank-top' : ''}">
+        <td class="rank-cell">${rankCell}</td>
+        <td class="player-name">${escHtml(p.name)}${fire}</td>
+        <td class="club-cell">${escHtml(p.club || '—')}</td>
+        <td class="score-cell">
+          <div class="score-bar-wrap">
+            <div class="score-bar" style="width:${pct}%"></div>
+            <span>${p.score}</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="lb-table-wrap">
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th class="center">Rank</th>
+            <th>Player</th>
+            <th>Club</th>
+            <th class="center">Time</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ────────────────────────────────────────────
+     SWITCH ACTIVE GRADE
+  ──────────────────────────────────────────── */
+  function switchGrade(grade) {
+    activeGrade = grade;
+    renderTabs(gradeData);
+    const data    = gradeData[grade];
+    const players = data ? data.players : [];
+    const content = document.getElementById('mainContent');
+
+    content.innerHTML = `
+      ${podiumHTML(players)}
+      ${tableHTML(players)}
+    `;
+  }
+
+  /* ────────────────────────────────────────────
+     FETCH & REFRESH
+  ──────────────────────────────────────────── */
+  let firstLoad = true;
+
+  const fetchLog = [];
+
+  async function fetchCSV() {
+    // ── Primary: Google Apps Script (bypasses all CORS issues) ──
+    if (SCRIPT_URL && SCRIPT_URL !== 'YOUR_SCRIPT_URL_HERE') {
+      fetchLog.push('⏳ Apps Script...');
+      try {
+        const r = await fetch(SCRIPT_URL, { cache: 'no-store' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const t = await r.text();
+        if (t.includes(',')) { fetchLog[fetchLog.length-1] = '✅ Apps Script'; return t; }
+        throw new Error('Unexpected response');
+      } catch(e) { fetchLog[fetchLog.length-1] = `❌ Apps Script: ${e.message}`; }
+    }
+
+    // ── Fallback: direct CSV (may fail on GitHub due to CORS) ──
+    fetchLog.push('⏳ Direct CSV...');
+    try {
+      const r = await fetch(CSV_URL, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const t = await r.text();
+      if (t.includes(',') && !t.trim().startsWith('<!')) { fetchLog[fetchLog.length-1] = '✅ Direct CSV'; return t; }
+      throw new Error('Not CSV');
+    } catch(e) { fetchLog[fetchLog.length-1] = `❌ Direct: ${e.message}`; }
+
+    throw new Error('Set up Apps Script — see HTML comments for instructions');
+  }
+
+  async function fetchAndRender() {
+    if (window.location.protocol === 'file:') {
+      document.getElementById('mainContent').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <p style="font-size:0.95rem;color:#ffcccc;margin-bottom:10px;">PAGE MUST BE HOSTED TO LOAD DATA</p>
+          <p style="max-width:400px;margin:0 auto;line-height:1.6;color:#aac4ff;">
+            Upload to GitHub Pages and the scores will load automatically.
+          </p>
+        </div>`;
+      document.getElementById('lastUpdated').textContent = 'Not hosted yet';
+      return;
+    }
+    try {
+      const text = await fetchCSV();
+      const data = parseData(text);
+
+      const hasData = Object.values(data).some(g => g.players.length > 0);
+
+      if (hasData) {
+        gradeData = data;
+
+        // Default to first grade that has data
+        const availGrades = GRADE_ORDER.filter(g => data[g] && data[g].players.length > 0);
+        if (!activeGrade || !data[activeGrade]) {
+          activeGrade = availGrades[0] || GRADE_ORDER[0];
+        }
+
+        renderStats(data);
+        renderTabs(data);
+        switchGrade(activeGrade);
+      } else {
+        // Has structure but no players yet
+        gradeData = data;
+        const availGrades = GRADE_ORDER.filter(g => data[g]);
+        if (!activeGrade && availGrades.length) activeGrade = availGrades[0];
+        renderStats(data);
+        renderTabs(data);
+        if (activeGrade) {
+          document.getElementById('mainContent').innerHTML =
+            podiumHTML([]) + tableHTML([]);
+        }
+      }
+
+      // Update timestamp
+      const now = new Date();
+      document.getElementById('lastUpdated').textContent =
+        now.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) + ' — ' +
+        now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+      // Toast on refresh (not first load)
+      if (!firstLoad) showToast();
+      firstLoad = false;
+
+    } catch (e) {
+      console.error('Failed to fetch leaderboard:', e);
+      if (firstLoad) {
+        document.getElementById('mainContent').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚠️</div>
+            <p style="color:#ffcccc;font-size:0.9rem;margin-bottom:8px;">APPS SCRIPT NOT CONFIGURED YET</p>
+            <p style="color:#aac4ff;font-size:0.78rem;max-width:420px;margin:0 auto 10px;line-height:1.7">
+              Open your Google Sheet → <strong>Extensions → Apps Script</strong> → paste the script → Deploy as Web App → copy the URL → paste it into <code>leaderboard.html</code> where it says <code>YOUR_SCRIPT_URL_HERE</code>
+            </p>
+            <div style="text-align:left;max-width:480px;margin:8px auto;background:rgba(0,0,0,0.5);padding:12px 16px;border-radius:8px;font-size:0.7rem;font-family:monospace;color:#aac4ff;line-height:1.8">
+              ${fetchLog.map(l => `<div>${l}</div>`).join('')}
+            </div>
+          </div>`;
+      }
+    }
+  }
+
+  /* ────────────────────────────────────────────
+     COUNTDOWN TIMER
+  ──────────────────────────────────────────── */
+  function startCountdown() {
+    countdownVal = REFRESH_INTERVAL;
+    const el = document.getElementById('countdown');
+    const tick = setInterval(() => {
+      countdownVal--;
+      if (el) el.textContent = countdownVal;
+      if (countdownVal <= 0) {
+        clearInterval(tick);
+        fetchAndRender().then(startCountdown);
+      }
+    }, 1000);
+  }
+
+  /* ────────────────────────────────────────────
+     TOAST
+  ──────────────────────────────────────────── */
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  /* ────────────────────────────────────────────
+     INIT
+  ──────────────────────────────────────────── */
+  fetchAndRender().then(startCountdown);
+</script>
+</body>
+</html>
